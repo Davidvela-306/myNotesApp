@@ -1,12 +1,11 @@
 import React, { createContext, useState, useEffect } from "react";
 import {
-  getAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { auth} from "../auth/firebase"; 
+import { auth } from "../auth/firebase";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {

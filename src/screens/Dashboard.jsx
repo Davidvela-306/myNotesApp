@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   Modal,
   Pressable,
   ScrollView,
@@ -19,7 +18,7 @@ import Feather from "@expo/vector-icons/Feather";
 import CardNote from "../components/CardNote";
 import { AuthContext } from "../context/AuthContext";
 import { database } from "../auth/firebase";
-import { ref, push, set, get } from "firebase/database";
+import { ref, push, set, get, update, remove } from "firebase/database";
 
 const addNote = async (userId, title, description) => {
   const notesRef = ref(database, "users/" + userId + "/notes");
@@ -32,7 +31,7 @@ const addNote = async (userId, title, description) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
-    console.log("Note added successfully!");
+    Alert.alert("Nota añadida correctamente");
   } catch (error) {
     console.error("Error adding note:", error);
     throw error;
@@ -50,7 +49,6 @@ const getNotesByUserId = async (userId) => {
         id: key,
         ...notesObject[key],
       }));
-      console.log("Notas obtenidas en getNotesByUserId:", notesArray);
       return notesArray;
     } else {
       console.log("No se encontraron notas para el usuario.");
@@ -71,27 +69,20 @@ const Dashboard = ({ navigation }) => {
   const { user, logout } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-
-  const fetchNotes = async () => {
-    if (!user) return;
-    try {
-      const thisNotes = await getNotesByUserId(user.uid);
-      if (thisNotes) {
-        console.log("Notas obtenidas:", thisNotes);
-        setNotes(thisNotes);
-      }
-    } catch (error) {
-      console.error("Error al obtener notas:", error);
-    }
-  };
+  const [refreshNotes, setRefreshNotes] = useState(false);
+  const [newNoteData, setNewNoteData] = useState({
+    title: "",
+    description: "",
+  });
 
   useEffect(() => {
     if (!user) {
       navigation.navigate("Login");
+
       return;
     }
     fetchNotes();
-  }, [user, navigation, modalVisible]);
+  }, [user, navigation, modalVisible, refreshNotes]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -99,29 +90,73 @@ const Dashboard = ({ navigation }) => {
     setRefreshing(false);
   }, [user]);
 
-  console.log("Notes tipo:", typeof notes);
-  console.log("Notes state:", notes);
-  notes.forEach((note) => {
-    console.log("Note individual:", note.title);
-  });
-  const handleDelete = () => console.log("Delete");
-  const handleEdit = async () => {
+  const handleCreate = async () => {
     try {
       await addNote(user.uid, note.title, note.description);
       const updatedNotes = await getNotesByUserId(user.uid);
       setNotes(updatedNotes);
       setNote({ title: "", description: "" });
-      Alert.alert("Success", "Note added successfully");
       setModalVisible(false);
     } catch (error) {
       Alert.alert("Error", error.message);
     }
   };
+  const handleDelete = async (noteId) => {
+    try {
+      const noteRef = ref(database, `users/${user.uid}/notes/${noteId}`);
+      await remove(noteRef);
+
+      Alert.alert("Éxito", "La nota ha sido eliminada.");
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
+  const handleEdit = (idNote, data) => {
+    try {
+      updateNote(user.uid, idNote, data);
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
+  const updateNote = (userId, noteId, updatedData) => {
+    update(ref(database, `users/${userId}/notes/${noteId}`), {
+      ...updatedData,
+      updated_at: new Date().toISOString(),
+    })
+      .then(() => {
+        Alert.alert("Nota actualizada correctamente");
+      })
+      .catch((error) => {
+        console.error("Error updating note:", error);
+      });
+  };
+  const fetchNotes = async () => {
+    if (!user) return;
+    try {
+      const thisNotes = await getNotesByUserId(user.uid);
+      if (thisNotes) {
+        setNotes(thisNotes);
+      }
+    } catch (error) {
+      console.error("Error al obtener notas:", error);
+    }
+  };
 
   return (
-    <View style={[styles.container, modalVisible && styles.modalBackground]}>
+    <View
+      style={[
+        styles.container,
+        modalVisible && styles.modalBackground,
+        { marginTop: 30 },
+      ]}
+    >
       <View style={styles.header}>
-        <Text>Hola, {user?.displayName}</Text>
+        <View>
+          <Text style={{ fontSize: 16 }}>Hola, {user?.displayName}</Text>
+          <Text style={{ fontSize: 20, fontWeight: "bold" }}>Notas</Text>
+        </View>
         <MaterialIcons
           name="logout"
           size={24}
@@ -140,10 +175,20 @@ const Dashboard = ({ navigation }) => {
               key={note.id}
               title={note.title}
               description={note.description}
+              dropNote={() => {
+                handleDelete(note.id);
+                setRefreshNotes(!refreshNotes);
+              }}
+              setNewNoteData={setNewNoteData}
+              editNote={() => {
+                handleEdit(note.id, newNoteData);
+                setRefreshNotes(!refreshNotes);
+              }}
             />
           ))}
         </View>
       </ScrollView>
+
       {/* Modales: */}
       <View style={styles.centeredView}>
         <Modal
@@ -157,14 +202,11 @@ const Dashboard = ({ navigation }) => {
               <View style={styles.modalHeader}>
                 <TextInput
                   style={styles.modalInput}
-                  placeholder="Note title"
+                  placeholder="Título"
                   value={note.title}
                   onChangeText={(text) => setNote({ ...note, title: text })}
                 />
                 <View style={styles.iconContainer}>
-                  <Pressable onPress={handleDelete}>
-                    <AntDesign name="delete" size={20} color="#FF0004" />
-                  </Pressable>
                   <Pressable onPress={() => setModalVisible(false)}>
                     <AntDesign name="close" size={20} color="black" />
                   </Pressable>
@@ -174,7 +216,7 @@ const Dashboard = ({ navigation }) => {
               <ScrollView contentContainerStyle={styles.scrollView}>
                 <TextInput
                   style={styles.textInput}
-                  placeholder={"___________________________\n".repeat(10)}
+                  placeholder={"Descripción de la nota"}
                   multiline
                   value={note.description}
                   onChangeText={(text) =>
@@ -183,7 +225,7 @@ const Dashboard = ({ navigation }) => {
                 />
               </ScrollView>
               <Pressable
-                onPress={handleEdit}
+                onPress={handleCreate}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -220,9 +262,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   header: {
+    alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 20,
+    padding: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
   },
   centeredView: {
     flex: 1,

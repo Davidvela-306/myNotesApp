@@ -1,16 +1,18 @@
 import React, { useState, useContext } from "react";
 import { View, Button, TextInput, StyleSheet } from "react-native";
-import { AuthContext } from "../context/AuthContext"; 
+import { AuthContext } from "../context/AuthContext";
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useContext(AuthContext); 
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async () => {
     try {
       await login(email, password);
       navigation.navigate("Dashboard");
+      setEmail("");
+      setPassword("");
     } catch (error) {
       console.error(error.message);
       alert("Error al iniciar sesión. Verifica tus credenciales.");

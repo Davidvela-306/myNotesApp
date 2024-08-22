@@ -17,7 +17,12 @@ function MyStack() {
       <Stack.Screen name="Home" component={Home} />
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Register" component={Register} />
-      <Stack.Screen name="Dashboard" component={Dashboard} />
+      {/* quitar encabezado: */}
+      <Stack.Screen
+        name="Dashboard"
+        component={Dashboard}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }

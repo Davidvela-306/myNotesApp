@@ -38,7 +38,9 @@ const Register = ({ navigation }) => {
         });
 
         Alert.alert("Registro exitoso", "Usuario registrado exitosamente");
-
+        setName("");
+        setEmail("");
+        setPassword("");
         navigation.navigate("Dashboard");
       } catch (error) {
         Alert.alert("Error:", error.message);
