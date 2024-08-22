@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,38 +8,118 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Entypo from "@expo/vector-icons/Entypo";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
+
+import CardNote from "../components/CardNote";
 import { AuthContext } from "../context/AuthContext";
-
-import { ref, set } from "firebase/database";
 import { database } from "../auth/firebase";
+import { ref, push, set, get } from "firebase/database";
 
+const addNote = async (userId, title, description) => {
+  const notesRef = ref(database, "users/" + userId + "/notes");
+  const newNoteRef = push(notesRef);
 
+  try {
+    await set(newNoteRef, {
+      title: title,
+      description: description,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    console.log("Note added successfully!");
+  } catch (error) {
+    console.error("Error adding note:", error);
+    throw error;
+  }
+};
+
+const getNotesByUserId = async (userId) => {
+  try {
+    const notesRef = ref(database, `users/${userId}/notes`);
+    const snapshot = await get(notesRef);
+
+    if (snapshot.exists()) {
+      const notesObject = snapshot.val();
+      const notesArray = Object.keys(notesObject).map((key) => ({
+        id: key,
+        ...notesObject[key],
+      }));
+      console.log("Notas obtenidas en getNotesByUserId:", notesArray);
+      return notesArray;
+    } else {
+      console.log("No se encontraron notas para el usuario.");
+      return [];
+    }
+  } catch (error) {
+    console.error("Error al obtener las notas:", error);
+    return [];
+  }
+};
 
 const Dashboard = ({ navigation }) => {
+  const [notes, setNotes] = useState([]);
+  const [note, setNote] = useState({
+    title: "",
+    description: "",
+  });
   const { user, logout } = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
-  console.log("database", database);
+  const [refreshing, setRefreshing] = useState(false);
 
-  console.log("displayName", user.displayName);
+  const fetchNotes = async () => {
+    if (!user) return;
+    try {
+      const thisNotes = await getNotesByUserId(user.uid);
+      if (thisNotes) {
+        console.log("Notas obtenidas:", thisNotes);
+        setNotes(thisNotes);
+      }
+    } catch (error) {
+      console.error("Error al obtener notas:", error);
+    }
+  };
 
   useEffect(() => {
     if (!user) {
       navigation.navigate("Login");
+      return;
     }
+    fetchNotes();
+  }, [user, navigation, modalVisible]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchNotes();
+    setRefreshing(false);
   }, [user]);
 
+  console.log("Notes tipo:", typeof notes);
+  console.log("Notes state:", notes);
+  notes.forEach((note) => {
+    console.log("Note individual:", note.title);
+  });
   const handleDelete = () => console.log("Delete");
-  const handleEdit = () => console.log("Edit");
+  const handleEdit = async () => {
+    try {
+      await addNote(user.uid, note.title, note.description);
+      const updatedNotes = await getNotesByUserId(user.uid);
+      setNotes(updatedNotes);
+      setNote({ title: "", description: "" });
+      Alert.alert("Success", "Note added successfully");
+      setModalVisible(false);
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
 
   return (
-    <SafeAreaView
-      style={[styles.container, modalVisible && styles.modalBackground]}
-    >
+    <View style={[styles.container, modalVisible && styles.modalBackground]}>
       <View style={styles.header}>
         <Text>Hola, {user?.displayName}</Text>
         <MaterialIcons
@@ -49,7 +129,22 @@ const Dashboard = ({ navigation }) => {
           onPress={logout}
         />
       </View>
-
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={{ margin: 20 }}>
+          {notes.map((note) => (
+            <CardNote
+              key={note.id}
+              title={note.title}
+              description={note.description}
+            />
+          ))}
+        </View>
+      </ScrollView>
+      {/* Modales: */}
       <View style={styles.centeredView}>
         <Modal
           animationType="fade"
@@ -60,7 +155,12 @@ const Dashboard = ({ navigation }) => {
           <View style={styles.centeredView}>
             <View style={styles.modalView}>
               <View style={styles.modalHeader}>
-                <TextInput style={styles.modalInput} placeholder="Note title" />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Note title"
+                  value={note.title}
+                  onChangeText={(text) => setNote({ ...note, title: text })}
+                />
                 <View style={styles.iconContainer}>
                   <Pressable onPress={handleDelete}>
                     <AntDesign name="delete" size={20} color="#FF0004" />
@@ -76,9 +176,23 @@ const Dashboard = ({ navigation }) => {
                   style={styles.textInput}
                   placeholder={"___________________________\n".repeat(10)}
                   multiline
+                  value={note.description}
+                  onChangeText={(text) =>
+                    setNote({ ...note, description: text })
+                  }
                 />
               </ScrollView>
-              <Pressable onPress={handleEdit} style={{ flexDirection: "row" , alignItems: "center", gap: 15, padding: 10, backgroundColor: "#30F2AB", borderRadius: 10}}>
+              <Pressable
+                onPress={handleEdit}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 15,
+                  padding: 10,
+                  backgroundColor: "#30F2AB",
+                  borderRadius: 10,
+                }}
+              >
                 <Text style={styles.editText}>Guardar Cambios</Text>
                 <Feather name="edit" size={20} color="#000" />
               </Pressable>
@@ -93,7 +207,7 @@ const Dashboard = ({ navigation }) => {
           <Entypo name="circle-with-plus" size={40} style={styles.textStyle} />
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

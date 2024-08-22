@@ -22,7 +22,6 @@ const Register = ({ navigation }) => {
       }
       try {
         const userCredentials = await register(email, password);
-        console.log("userCredentials", userCredentials);
 
         const { user } = userCredentials;
 
