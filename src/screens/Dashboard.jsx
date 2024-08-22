@@ -78,7 +78,7 @@ const Dashboard = ({ navigation }) => {
 
   useEffect(() => {
     if (!user) {
-      navigation.navigate("Login");
+      navigation.navigate("Home");
 
       return;
     }
