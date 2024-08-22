@@ -1,7 +1,10 @@
 import React, { useState, useContext } from "react";
-import { View, Text, Button, TextInput, StyleSheet } from "react-native";
-import { AuthContext } from "../context/AuthContext"; // Importa el contexto
+import { View, Text, Button, TextInput, StyleSheet, Alert } from "react-native";
 
+import { ref, set } from "firebase/database";
+import { database } from "../auth/firebase";
+import { AuthContext } from "../context/AuthContext"; // Importa el contexto
+import { updateProfile } from "firebase/auth";
 const Register = ({ navigation }) => {
   const [name, setName] = useState(""); // Nuevo estado para el nombre
   const [email, setEmail] = useState("");
@@ -17,9 +20,30 @@ const Register = ({ navigation }) => {
         );
         return;
       }
-      await register(email, password);
-      // Aquí podrías guardar el nombre del usuario en tu base de datos o como metadata en Firebase
-      navigation.navigate("Dashboard");
+      try {
+        const userCredentials = await register(email, password);
+        console.log("userCredentials", userCredentials);
+
+        const { user } = userCredentials;
+
+        await updateProfile(user, {
+          displayName: name,
+        });
+
+        // Almacenar usuario en Realtime Database
+        await set(ref(database, "users/" + user.uid), {
+          email: user.email,
+          name: name,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        Alert.alert("Registro exitoso", "Usuario registrado exitosamente");
+
+        navigation.navigate("Dashboard");
+      } catch (error) {
+        Alert.alert("Error:", error.message);
+      }
     } catch (error) {
       console.error(error.message);
     }

@@ -6,16 +6,12 @@ import {
   createUserWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { app } from "../auth/firebase"; // Importa tu configuración de Firebase
-
+import { auth} from "../auth/firebase"; 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const auth = getAuth(app);
-  console.log("auth", auth);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
