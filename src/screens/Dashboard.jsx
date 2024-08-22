@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
   RefreshControl,
+  Image,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Entypo from "@expo/vector-icons/Entypo";
@@ -170,22 +171,48 @@ const Dashboard = ({ navigation }) => {
         }
       >
         <View style={{ margin: 20 }}>
-          {notes.map((note) => (
-            <CardNote
-              key={note.id}
-              title={note.title}
-              description={note.description}
-              dropNote={() => {
-                handleDelete(note.id);
-                setRefreshNotes(!refreshNotes);
+          {notes.length > 0 ? (
+            notes.map((note) => (
+              <CardNote
+                key={note.id}
+                title={note.title}
+                description={note.description}
+                dropNote={() => {
+                  handleDelete(note.id);
+                  setRefreshNotes(!refreshNotes);
+                }}
+                setNewNoteData={setNewNoteData}
+                editNote={() => {
+                  handleEdit(note.id, newNoteData);
+                  setRefreshNotes(!refreshNotes);
+                }}
+              />
+            ))
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                height: 600,
               }}
-              setNewNoteData={setNewNoteData}
-              editNote={() => {
-                handleEdit(note.id, newNoteData);
-                setRefreshNotes(!refreshNotes);
-              }}
-            />
-          ))}
+            >
+              <Image
+                source={require("../../assets/notes.png")}
+                style={{ width: 200, height: 150 }}
+              />
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  marginTop: 20,
+                }}
+              >
+                Aún no tienes notas
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 

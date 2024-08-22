@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { View, Button, TextInput, StyleSheet } from "react-native";
+import { View, Button, TextInput, StyleSheet, Image, Text } from "react-native";
 import { AuthContext } from "../context/AuthContext";
 
 const Login = ({ navigation }) => {
@@ -21,6 +21,11 @@ const Login = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require("../../assets/login.png")}
+        style={styles.image}
+      ></Image>
+      <Text style={styles.title}>Ingresar</Text>
       <TextInput
         placeholder="Email"
         value={email}
@@ -35,7 +40,7 @@ const Login = ({ navigation }) => {
         secureTextEntry
         style={styles.input}
       />
-      <Button title="Iniciar Sesión" onPress={handleLogin} />
+      <Button title="Iniciar Sesión" onPress={handleLogin} color={"#30F2AB"} />
     </View>
   );
 };
@@ -45,6 +50,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
+    backgroundColor: "#fff",
+  },
+  image: {
+    width: 200,
+    height: 150,
+    marginBottom: 20,
+    alignSelf: "center",
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#3C3C40",
   },
   input: {
     height: 40,

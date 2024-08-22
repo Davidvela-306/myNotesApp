@@ -1,5 +1,13 @@
 import React, { useState, useContext } from "react";
-import { View, Text, Button, TextInput, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  Button,
+  TextInput,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
 
 import { ref, set } from "firebase/database";
 import { database } from "../auth/firebase";
@@ -52,6 +60,11 @@ const Register = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require("../../assets/register.png")}
+        style={styles.image}
+      ></Image>
+      <Text style={styles.title}>Registrarse</Text>
       <TextInput
         placeholder="Nombre"
         value={name}
@@ -72,18 +85,33 @@ const Register = ({ navigation }) => {
         secureTextEntry
         style={styles.input}
       />
-      <Button title="Registrarse" onPress={handleRegister} />
+      <Button title="Registrarse" onPress={handleRegister} color={"#30F2AB"} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: "#fff",
     flex: 1,
     justifyContent: "center",
     padding: 20,
   },
+  image: {
+    width: 200,
+    height: 150,
+    marginBottom: 20,
+    alignSelf: "center",
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#3C3C40",
+  },
   input: {
+    backgroundColor: "white",
     height: 40,
     borderColor: "gray",
     borderWidth: 1,
