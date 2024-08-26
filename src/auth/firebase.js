@@ -1,21 +1,18 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getAuth } from "firebase/auth";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getDatabase } from "firebase/database";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBccoFetujZu0iAPL8XjabMi0u8t12IPLg",
-  authDomain: "recivecitasks.firebaseapp.com",
-  projectId: "recivecitasks",
-  storageBucket: "recivecitasks.appspot.com",
-  messagingSenderId: "674355794302",
-  appId: "1:674355794302:web:b9631922a2008615fea32f",
-  databaseURL: "https://recivecitasks-default-rtdb.firebaseio.com",
+  apiKey: process.env.EXPO_PUBLIC_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_APP_ID, 
+  databaseURL: process.env.EXPO_PUBLIC_DATABASE_URL, 
 };
 
 // Initialize Firebase
@@ -23,8 +20,6 @@ const app = initializeApp(firebaseConfig);
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage)
 });
-
-
 
 // Initialize Realtime Database and get a reference to the service
 const database = getDatabase(app);
